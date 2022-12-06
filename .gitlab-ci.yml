@@ -1,0 +1,48 @@
+variables:
+    IMAGE_NAME_FRONTEND: frontend
+    IMAGE_NAME_BACKEND: backend
+    IMAGE_TAG: toDo-app-1.0
+
+stages:
+    - test
+    - build & push frontend
+    - build & push backend
+
+run_frontend_tests:
+    stage: test
+    image: node:19-alpine
+    before_script:
+        - cd frontend
+        - npm install -f
+        - npm install --save react react-dom react-scripts
+        - npm install --save-dev @testing-library/jest-dom
+    script:
+        - npm test
+
+build_frontend_image_and_push:
+    stage: build & push frontend
+    image: docker:20.10.21
+    services: 
+        - docker:20.10.21-dind
+    variables:
+        DOCKER_TLS_CERTDIR: "/certs"
+    before_script:
+        - cd frontend
+        - docker login registry.gitlab.com -u $USER_NAME -p $USER_PASS
+    script:
+        - docker build -t registry.gitlab.com/go.harin.ion/pet-project/$IMAGE_NAME_FRONTEND:$IMAGE_TAG .
+        - docker push registry.gitlab.com/go.harin.ion/pet-project/$IMAGE_NAME_FRONTEND:$IMAGE_TAG
+
+build_backend_image_and_push:
+    stage: build & push backend
+    image: docker:20.10.21
+    services: 
+        - docker:20.10.21-dind
+    variables:
+        DOCKER_TLS_CERTDIR: "/certs"
+    before_script:
+        - cd backend
+        - docker login registry.gitlab.com -u $USER_NAME -p $USER_PASS
+    script:
+        - docker build -t registry.gitlab.com/go.harin.ion/pet-project/$IMAGE_NAME_BACKEND:$IMAGE_TAG .
+        - docker push registry.gitlab.com/go.harin.ion/pet-project/$IMAGE_NAME_BACKEND:$IMAGE_TAG
